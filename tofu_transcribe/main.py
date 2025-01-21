@@ -1,9 +1,12 @@
 import argparse
 from config_loader import ConfigLoader
-from logger_setup import LoggerSetup
-from video_processor import VideoProcessor
-from webhook_handler import WebhookHandler
-
+from video.logger_setup import LoggerSetup
+from video.video_processor import VideoProcessor
+from webserver.webhook_handler import WebhookHandler
+from script.parse_srt import parse_srt
+from script.emotion_analysis import analyze_individual_sentences, group_and_average, group_by_individual_scores
+from script.utils import extract_highest_groups
+from script.plot import plot_emotion_trends
 class MainApp:
     """Main application entry point."""
     @staticmethod
