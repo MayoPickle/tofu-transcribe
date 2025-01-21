@@ -1,0 +1,7 @@
+flask
+argparse
+json
+logging
+subprocess
+whisper
+waitress
