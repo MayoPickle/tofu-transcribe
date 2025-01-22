@@ -1,5 +1,5 @@
-import os
 from flask import Flask, request, jsonify
+import os
 from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 from waitress import serve
@@ -19,8 +19,9 @@ class WebhookHandler:
         self.app.add_url_rule("/v1/video2script", methods=["POST"], view_func=self.video2script_handler)
 
     def background_task(self, full_path):
+        """Process video file in a background task."""
         try:
-            self.processor.process_video(full_path)
+            self.processor.process_video_and_analyze(full_path)
         except Exception as e:
             self.logger.error(f"Error processing video file {full_path}: {e}")
         finally:
@@ -28,6 +29,7 @@ class WebhookHandler:
                 self.active_tasks.remove(full_path)
 
     def video2script_handler(self):
+        """Handle incoming webhook requests."""
         data = request.get_json()
         if not data:
             return jsonify({"error": "Invalid JSON"}), 400
@@ -56,7 +58,8 @@ class WebhookHandler:
 
         self.executor.submit(self.background_task, full_path)
         return jsonify({"message": "Task started", "file": relative_path}), 200
-    
+
     def run(self):
+        """Run the web server."""
         self.logger.info("Starting production webserver with Waitress...")
         serve(self.app, host=self.config["flask_host"], port=self.config["flask_port"])
