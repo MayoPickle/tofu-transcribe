@@ -2,9 +2,9 @@ import os
 import json
 
 from script.parse_srt import parse_srt
-from TofuTranscribe.tofu_transcribe.script.script_emotion_analyzer import ScriptEmotionAnalyzer
 from script.plot import EmotionTrendPlotter
-from TofuTranscribe.tofu_transcribe.speech.speech_emotion_analyzer import SpeechEmotionAnalyzer
+from script.script_emotion_analyzer import ScriptEmotionAnalyzer
+from speech.speech_emotion_analyzer import SpeechEmotionAnalyzer
 
 
 class EmotionAnalyzer:

@@ -1,5 +1,6 @@
 import json
 from transformers import pipeline
+from tqdm import tqdm
 
 class ScriptEmotionAnalyzer:
     """
@@ -26,7 +27,7 @@ class ScriptEmotionAnalyzer:
         """
         individual_results = []
 
-        for start, end, text in subtitles:
+        for start, end, text in tqdm(subtitles, desc="Analyzing individual sentences"):
             emotion = self.classifier(text)[0]  # Analyze single sentence
             individual_results.append({
                 "start": start,
@@ -62,7 +63,7 @@ class ScriptEmotionAnalyzer:
         group_labels = []
         results = []  # To store results for JSON output
 
-        for i in range(0, len(subtitles) - group_size + 1, step):
+        for i in tqdm(range(0, len(subtitles) - group_size + 1, step), desc="Processing grouped subtitles"):
             group = subtitles[i:i + group_size]
 
             # Combine subtitles into a single text; trim last sentence if too long
@@ -73,7 +74,6 @@ class ScriptEmotionAnalyzer:
 
             # Skip group if single subtitle still exceeds max length
             if len(combined_text) > max_length:
-                print(f"Skipping group starting at subtitle {i+1} due to excessive length.")
                 continue
 
             # Calculate average time for the group (optional, not necessarily used later)
@@ -102,17 +102,8 @@ class ScriptEmotionAnalyzer:
                 "score": emotion['score']
             })
 
-            # Debugging information
-            print(f"Group {len(grouped_scores)}:")
-            print(f"  Time Range: {grouped_times[-1][0]}s - {grouped_times[-1][1]}s")
-            print(f"  Emotion Label: {emotion['label']}")
-            print(f"  Emotion Score: {emotion['score']:.4f}")
-            print(f"  Combined Text: {combined_text}\n")
-
-        # Save grouped results to JSON file
         with open(output_json_path, "w", encoding="utf-8") as file:
             json.dump(results, file, ensure_ascii=False, indent=4)
-        print(f"Grouped emotion results saved to {output_json_path}")
 
         return grouped_times, grouped_scores, group_texts, group_labels
 
@@ -128,7 +119,7 @@ class ScriptEmotionAnalyzer:
         grouped_times = []
         grouped_texts = []
 
-        for i in range(0, len(individual_results) - group_size + 1, step):
+        for i in tqdm(range(0, len(individual_results) - group_size + 1, step), desc="Processing individual scores"):
             group = individual_results[i:i + group_size]
 
             # Simply average the scores; you can replace this with another weighting or calculation method
@@ -140,11 +131,5 @@ class ScriptEmotionAnalyzer:
             grouped_scores.append(group_score)
             grouped_times.append((group_start, group_end))
             grouped_texts.append(group_text)
-
-            # Debugging information
-            print(f"Group {len(grouped_scores)}:")
-            print(f"  Time Range: {group_start}s - {group_end}s")
-            print(f"  Normalized Group Score: {group_score:.4f}")
-            print(f"  Group Text: {group_text[:100]}...\n")
 
         return grouped_times, grouped_scores, grouped_texts
