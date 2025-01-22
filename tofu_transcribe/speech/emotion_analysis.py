@@ -4,6 +4,7 @@ import torch
 from pydub import AudioSegment
 import srt
 from datetime import timedelta
+import json
 
 
 class EmotionSRTProcessor:
@@ -21,6 +22,7 @@ class EmotionSRTProcessor:
         self.audio_path = self._find_file(extension=".wav")
         self.srt_path = self._find_file(extension=".srt")
         self.output_srt_path = os.path.join(work_dir, "output_with_emotion.srt")
+        self.output_json_path = os.path.join(work_dir, "emotion_analysis_results.json")
 
         # Load audio and SRT files
         self.audio = AudioSegment.from_file(self.audio_path)
@@ -85,17 +87,30 @@ class EmotionSRTProcessor:
 
     def process_and_save(self):
         """
-        Process each subtitle in the SRT file and save a new SRT file with emotion scores.
+        Process each subtitle in the SRT file and save a new SRT file with emotion scores and a JSON file.
         """
         new_subtitles = []
+        results = []  # To store JSON data
+
         for subtitle in self.subtitles:
             start_time = self.timestamp_to_milliseconds(subtitle.start)
             end_time = self.timestamp_to_milliseconds(subtitle.end)
             audio_segment = self.audio[start_time:end_time]
 
             top_emotion_label, emotion_scores = self.analyze_emotion(audio_segment)
-            emotion_scores_text = ", ".join([f"{label}: {score:.2f}" for label, score in emotion_scores])
 
+            # Prepare data for JSON
+            results.append({
+                "index": subtitle.index,
+                "start": str(subtitle.start),
+                "end": str(subtitle.end),
+                "text": subtitle.content,
+                "top_emotion": top_emotion_label,
+                "emotion_scores": {label: score for label, score in emotion_scores}
+            })
+
+            # Update SRT content
+            emotion_scores_text = ", ".join([f"{label}: {score:.2f}" for label, score in emotion_scores])
             new_content = f"[{top_emotion_label}: {emotion_scores}] {subtitle.content} + ({emotion_scores_text})"
             new_subtitle = srt.Subtitle(
                 index=subtitle.index,
@@ -105,7 +120,13 @@ class EmotionSRTProcessor:
             )
             new_subtitles.append(new_subtitle)
 
+        # Save updated SRT file
         with open(self.output_srt_path, "w", encoding="utf-8") as file:
             file.write(srt.compose(new_subtitles))
 
+        # Save JSON results
+        with open(self.output_json_path, "w", encoding="utf-8") as file:
+            json.dump(results, file, ensure_ascii=False, indent=4)
+
         print(f"Updated SRT file saved to {self.output_srt_path}")
+        print(f"Emotion analysis results saved to {self.output_json_path}")
