@@ -1,10 +1,9 @@
 flask
 argparse
-json
 logging
-subprocess
-whisper
+openai-whisper
 waitress
 transformers
 pydub
 srt
+pysrt

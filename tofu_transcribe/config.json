@@ -1,6 +1,6 @@
 {
-    "model": "small",
-    "device": "cuda",
+    "model": "tiny",
+    "device": "cpu",
     "language": "Chinese",
     "flask_host": "0.0.0.0",
     "flask_port": 8080,
