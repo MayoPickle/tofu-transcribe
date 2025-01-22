@@ -21,8 +21,8 @@ def analyze_individual_sentences(subtitles, model_name="uer/roberta-base-finetun
 
 def group_and_average(
     subtitles, 
-    group_size=64, 
-    step=4, 
+    group_size=32, 
+    step=2, 
     model_name="uer/roberta-base-finetuned-jd-binary-chinese", 
     max_length=512, 
     output_json_path="grouped_emotion_results.json"
@@ -72,13 +72,12 @@ def group_and_average(
         results.append({
             "group_index": len(grouped_scores),
             "group_size": len(group),  # Include the size of the group
+            "step": step,
             "time_range": {"start": group[0][0], "end": group[-1][1]},
             "average_time": avg_time,
             "combined_text": combined_text,
-            "top_emotion": {
-                "label": emotion['label'],
-                "score": emotion['score']
-            }
+            "label": emotion['label'],
+            "score": emotion['score']
         })
 
         # Debugging info
@@ -97,7 +96,7 @@ def group_and_average(
 
 
 
-def group_by_individual_scores(individual_results, group_size=64, step=4):
+def group_by_individual_scores(individual_results, group_size=32, step=2):
     """基于单句情绪分析结果进行分组"""
     grouped_scores = []
     grouped_times = []

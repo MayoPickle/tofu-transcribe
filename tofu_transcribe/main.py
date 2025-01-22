@@ -52,8 +52,8 @@ class MainApp:
             # Step 4: Find SRT file and analyze emotions
             srt_file = video_processor.find_srt_file(work_dir)
             if srt_file:
-                emotion_analyzer.analyze_emotions(srt_file, work_dir)
                 emotion_analyzer.process_speech_emotions(work_dir)
+                emotion_analyzer.analyze_emotions(srt_file, work_dir)
                 logger.info(f"Processing completed. Results saved in: {work_dir}")
             else:
                 logger.error(f"No SRT file found in {work_dir}. Emotion analysis skipped.")

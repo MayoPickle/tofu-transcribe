@@ -105,6 +105,7 @@ class EmotionSRTProcessor:
                 "start": str(subtitle.start),
                 "end": str(subtitle.end),
                 "text": subtitle.content,
+                "score": emotion_scores[0][1],
                 "top_emotion": top_emotion_label,
                 "emotion_scores": {label: score for label, score in emotion_scores}
             })

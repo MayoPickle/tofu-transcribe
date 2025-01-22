@@ -44,8 +44,8 @@ class WebhookHandler:
 
             srt_file = self.video_processor.find_srt_file(work_dir)
             if srt_file:
-                self.emotion_analyzer.analyze_emotions(srt_file, work_dir)
                 self.emotion_analyzer.process_speech_emotions(work_dir)
+                self.emotion_analyzer.analyze_emotions(srt_file, work_dir)
                 self.logger.info(f"Processing completed. Results saved in: {work_dir}")
             else:
                 self.logger.error(f"No SRT file found in {work_dir}. Skipping emotion analysis.")
