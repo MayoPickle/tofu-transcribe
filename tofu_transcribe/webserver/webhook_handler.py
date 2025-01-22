@@ -38,7 +38,7 @@ class WebhookHandler:
         """Process a video file in the background."""
         try:
             work_dir = self.video_processor.prepare_work_dir(full_path)
-            wav_file = os.path.join(work_dir, "audio.wav")
+            wav_file = os.path.join(work_dir, "tofu_transcribe.wav")
             self.video_processor.convert_to_wav(full_path, wav_file)
             self.video_processor.run_whisper(wav_file, work_dir)
 

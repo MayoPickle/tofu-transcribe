@@ -43,7 +43,7 @@ class MainApp:
             work_dir = video_processor.prepare_work_dir(args.input)
 
             # Step 2: Convert video to WAV
-            wav_file = os.path.join(work_dir, "audio.wav")
+            wav_file = os.path.join(work_dir, "tofu_transcribe.wav")
             video_processor.convert_to_wav(args.input, wav_file)
 
             # Step 3: Transcribe with Whisper
