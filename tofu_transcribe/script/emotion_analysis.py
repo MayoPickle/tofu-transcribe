@@ -95,7 +95,6 @@ def group_and_average(
     return grouped_times, grouped_scores, group_texts, group_labels
 
 
-
 def group_by_individual_scores(individual_results, group_size=32, step=2):
     """基于单句情绪分析结果进行分组"""
     grouped_scores = []
