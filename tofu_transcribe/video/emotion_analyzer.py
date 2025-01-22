@@ -1,14 +1,10 @@
 import os
 import json
+
 from script.parse_srt import parse_srt
-from script.emotion_analysis import (
-    analyze_individual_sentences,
-    group_and_average,
-    group_by_individual_scores
-)
-from script.utils import extract_highest_groups
+from TofuTranscribe.tofu_transcribe.script.script_emotion_analyzer import ScriptEmotionAnalyzer
 from script.plot import EmotionTrendPlotter
-from speech.emotion_analysis import EmotionSRTProcessor
+from TofuTranscribe.tofu_transcribe.speech.speech_emotion_analyzer import SpeechEmotionAnalyzer
 
 
 class EmotionAnalyzer:
@@ -17,6 +13,11 @@ class EmotionAnalyzer:
     def __init__(self, config, logger):
         self.config = config
         self.logger = logger
+
+        # Initialize ScriptEmotionAnalyzer instance during initialization to avoid repeated model loading
+        self.script_analyzer = ScriptEmotionAnalyzer(
+            model_name=self.config["emotion_model"]
+        )
 
     @staticmethod
     def _calculate_totle_score(work_dir):
@@ -62,9 +63,9 @@ class EmotionAnalyzer:
 
             # Calculate weighted score
             result["weighted_score"] = (
-                result["speech_emotion_score"] * 0.7 +
-                result["individual_emotion_score"] * 0.15 +
-                result["score"] * 0.15
+                result["speech_emotion_score"] * 0.7
+                + result["individual_emotion_score"] * 0.15
+                + result["score"] * 0.15
             )
 
         # Save total scores
@@ -83,28 +84,33 @@ class EmotionAnalyzer:
         self.logger.info(f"Loaded {len(subtitles)} subtitles from SRT file.")
 
         # Perform individual emotion analysis
-        individual_results = analyze_individual_sentences(
-            subtitles=subtitles,
-            model_name=self.config["emotion_model"]
-        )
+        # Use self.script_analyzer.analyze_individual_sentences instead of the previous function
+        individual_results = self.script_analyzer.analyze_individual_sentences(subtitles)
 
         # Save individual results to JSON
         self._save_individual_results(individual_results, work_dir)
 
         # Perform group emotion analysis
-        grouped_ind = group_by_individual_scores(individual_results, group_size=64, step=4)
-        grouped_comb = group_and_average(
-            subtitles=subtitles, group_size=64, step=4,
-            model_name=self.config["emotion_model"], max_length=512, output_json_path=os.path.join(work_dir, "grouped_emotion_results.json")
+        # 1) Group based on individual scores
+        self.script_analyzer.group_by_individual_scores(
+            individual_results,
+            group_size=64,
+            step=4
         )
 
+        # 2) Perform sliding window grouping and averaging
+        self.script_analyzer.group_and_average(
+            subtitles=subtitles,
+            group_size=64,
+            step=4,
+            max_length=512,
+            output_json_path=os.path.join(work_dir, "grouped_emotion_results.json")
+        )
+
+        # Calculate total scores
         groups_totle_scores = self._calculate_totle_score(work_dir)
 
-        # # Extract highest emotion groups
-        # highest_results = {
-        #     "individual": extract_highest_groups(*grouped_ind[:3]),
-        #     "combined": extract_highest_groups(*grouped_comb[:3])
-        # }
+        # Sort and retrieve top 3 groups by weighted score
         sorted_scores = sorted(
             groups_totle_scores,
             key=lambda x: x["weighted_score"],
@@ -137,25 +143,22 @@ class EmotionAnalyzer:
         times = [
             (group["time_range"]["start"], group["time_range"]["end"])
             for group in groups_totle_scores
-        ]  # Time intervals (duration of each group)
+        ]
 
-        scores = [
-            group["weighted_score"]
-            for group in groups_totle_scores
-        ]  # Emotion scores
+        scores = [group["weighted_score"] for group in groups_totle_scores]
 
         # Simplified plot: Times and scores only
         EmotionTrendPlotter.plot_emotion_trends(
             times=times,
             scores=scores,
-            labels=None,  # No labels needed
-            positive_group=None,  # Not used
-            negative_group=None,  # Not used
+            labels=None,
+            positive_group=None,
+            negative_group=None,
             output_file=plot_file,
         )
         self.logger.info(f"Emotion trend plot saved to: {plot_file}")
 
     def process_speech_emotions(self, work_dir):
         """Perform speech emotion analysis and save SRT with emotion scores."""
-        speech_analyzer = EmotionSRTProcessor(work_dir=work_dir)
+        speech_analyzer = SpeechEmotionAnalyzer(work_dir=work_dir)
         speech_analyzer.process_and_save()

@@ -7,7 +7,7 @@ from datetime import timedelta
 import json
 
 
-class EmotionSRTProcessor:
+class SpeechEmotionAnalyzer:
     def __init__(self, work_dir, model_name="superb/wav2vec2-base-superb-er"):
         """
         Initialize the audio and SRT files, as well as the emotion analysis model.
