@@ -1,10 +1,11 @@
 {
-    "model": "base",
+    "model": "tiny",
     "device": "cuda",
     "language": "Chinese",
     "flask_host": "0.0.0.0",
     "flask_port": 8080,
     "live_root_dir": "/mnt/fnOS/录播姬",
+    "emotion_model": "uer/roberta-base-finetuned-jd-binary-chinese",
     "ffmpeg_options": {
         "sample_rate": 16000,
         "channels": 1

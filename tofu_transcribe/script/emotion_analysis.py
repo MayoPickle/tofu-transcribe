@@ -24,12 +24,11 @@ def group_and_average(subtitles, group_size=64, step=4, model_name="uer/roberta-
     grouped_scores = []
     grouped_times = []
     group_texts = []
-    group_labels = []  # 记录每组的情绪标签
+    group_labels = []
 
     for i in range(0, len(subtitles) - group_size + 1, step):
         group = subtitles[i:i + group_size]
 
-        # 合并组内字幕为一个文本，按句子逐步裁剪
         combined_text = " ".join(text for _, _, text in group)
         while len(combined_text) > max_length and len(group) > 1:
             group = group[:-1]  # 移除最后一句
@@ -69,8 +68,7 @@ def group_by_individual_scores(individual_results, group_size=64, step=4):
     for i in range(0, len(individual_results) - group_size + 1, step):
         group = individual_results[i:i + group_size]
 
-        # 计算组的总得分（简单加和）
-        group_score = sum(result['score'] for result in group)
+        group_score = sum(result['score'] for result in group) / group_size
         group_start = group[0]['start']
         group_end = group[-1]['end']
         group_text = " ".join(result['text'] for result in group)
@@ -79,10 +77,9 @@ def group_by_individual_scores(individual_results, group_size=64, step=4):
         grouped_times.append((group_start, group_end))
         grouped_texts.append(group_text)
 
-        # 打印调试信息
         print(f"Group {len(grouped_scores)}:")
         print(f"  Time Range: {group_start}s - {group_end}s")
-        print(f"  Group Score (Sum of Individual Scores): {group_score:.4f}")
-        print(f"  Group Text: {group_text[:100]}...\n")  # 打印前100字符避免过长
+        print(f"  Normalized Group Score: {group_score:.4f}")
+        print(f"  Group Text: {group_text[:100]}...\n")
 
     return grouped_times, grouped_scores, grouped_texts

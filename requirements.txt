@@ -6,3 +6,5 @@ subprocess
 whisper
 waitress
 transformers
+pydub
+srt
