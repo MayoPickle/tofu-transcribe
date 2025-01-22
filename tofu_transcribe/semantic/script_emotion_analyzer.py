@@ -2,7 +2,7 @@ import json
 from transformers import pipeline
 from tqdm import tqdm
 
-class ScriptEmotionAnalyzer:
+class SemanticEmotionAnalyzer:
     """
     Encapsulates methods for single-sentence emotion analysis, group emotion analysis, etc.,
     to centralize the model and inference logic.
@@ -45,7 +45,7 @@ class ScriptEmotionAnalyzer:
         group_size=32,
         step=2,
         max_length=512,
-        output_json_path="grouped_emotion_results.json"
+        output_json_path="grouped_semantic_emotion_analysis_results.json"
     ):
         """
         Group subtitles using a sliding window, perform emotion analysis for each group,

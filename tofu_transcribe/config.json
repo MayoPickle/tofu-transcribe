@@ -5,7 +5,8 @@
     "flask_host": "0.0.0.0",
     "flask_port": 8080,
     "live_root_dir": "/mnt/fnOS/录播姬",
-    "emotion_model": "uer/roberta-base-finetuned-jd-binary-chinese",
+    "semantic_emotion_model": "uer/roberta-base-finetuned-jd-binary-chinese",
+    "speech_emotion_model": "superb/wav2vec2-base-superb-er",
     "ffmpeg_options": {
         "sample_rate": 16000,
         "channels": 1

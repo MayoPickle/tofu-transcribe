@@ -1,9 +1,9 @@
 import os
 import json
 
-from script.parse_srt import parse_srt
-from script.plot import EmotionTrendPlotter
-from script.script_emotion_analyzer import ScriptEmotionAnalyzer
+from semantic.parse_srt import parse_srt
+from semantic.plot import EmotionTrendPlotter
+from semantic.script_emotion_analyzer import SemanticEmotionAnalyzer
 from speech.speech_emotion_analyzer import SpeechEmotionAnalyzer
 
 
@@ -14,35 +14,35 @@ class EmotionAnalyzer:
         self.config = config
         self.logger = logger
 
-        # Initialize ScriptEmotionAnalyzer instance during initialization to avoid repeated model loading
-        self.script_analyzer = ScriptEmotionAnalyzer(
-            model_name=self.config["emotion_model"]
+        # Initialize SemanticEmotionAnalyzer instance during initialization to avoid repeated model loading
+        self.script_analyzer = SemanticEmotionAnalyzer(
+            model_name=self.config["semantic_emotion_model"]
         )
 
     @staticmethod
     def _calculate_totle_score(work_dir):
         """Calculate the total score of the individual emotion results."""
         # Load grouped emotion results
-        with open(os.path.join(work_dir, "grouped_emotion_results.json"), "r", encoding="utf-8") as f:
-            grouped_emotion_results = json.load(f)
+        with open(os.path.join(work_dir, "grouped_semantic_emotion_analysis_results.json"), "r", encoding="utf-8") as f:
+            grouped_semantic_emotion_analysis_results = json.load(f)
 
         # Load speech emotion analysis results
-        with open(os.path.join(work_dir, "emotion_analysis_results.json"), "r", encoding="utf-8") as f:
-            emotion_analysis_results = json.load(f)
+        with open(os.path.join(work_dir, "speech_emotion_analysis_results.json"), "r", encoding="utf-8") as f:
+            speech_emotion_analysis_results = json.load(f)
 
         # Load individual emotion results
-        with open(os.path.join(work_dir, "individual_emotion_results.json"), "r", encoding="utf-8") as f:
-            individual_results = json.load(f)
+        with open(os.path.join(work_dir, "semantic_emotion_analysis_results.json"), "r", encoding="utf-8") as f:
+            semantic_emotion_analysis_results = json.load(f)
 
         index_speech = 0
         index_individual = 0
 
-        for result in grouped_emotion_results:
+        for result in grouped_semantic_emotion_analysis_results:
             group_size = result["group_size"]
             step = result["step"]
 
             # Calculate speech emotion score
-            grouped_manbers = emotion_analysis_results[index_speech:index_speech + group_size]
+            grouped_manbers = speech_emotion_analysis_results[index_speech:index_speech + group_size]
             if len(grouped_manbers) > 0:
                 result["speech_emotion_score"] = sum(
                     [grouped_manber["score"] for grouped_manber in grouped_manbers]
@@ -52,7 +52,7 @@ class EmotionAnalyzer:
             index_speech += step
 
             # Calculate individual emotion score
-            individual_manbers = individual_results[index_individual:index_individual + group_size]
+            individual_manbers = semantic_emotion_analysis_results[index_individual:index_individual + group_size]
             if len(individual_manbers) > 0:
                 result["individual_emotion_score"] = sum(
                     [individual_manber["score"] for individual_manber in individual_manbers]
@@ -71,9 +71,9 @@ class EmotionAnalyzer:
         # Save total scores
         output_path = os.path.join(work_dir, "totle_score.json")
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(grouped_emotion_results, f, ensure_ascii=False, indent=4)
+            json.dump(grouped_semantic_emotion_analysis_results, f, ensure_ascii=False, indent=4)
 
-        return grouped_emotion_results
+        return grouped_semantic_emotion_analysis_results
 
     def analyze_emotions(self, srt_file, work_dir):
         """Perform emotion analysis on the SRT file."""
@@ -104,7 +104,7 @@ class EmotionAnalyzer:
             group_size=64,
             step=4,
             max_length=512,
-            output_json_path=os.path.join(work_dir, "grouped_emotion_results.json")
+            output_json_path=os.path.join(work_dir, "grouped_semantic_emotion_analysis_results.json")
         )
 
         # Calculate total scores
@@ -123,14 +123,14 @@ class EmotionAnalyzer:
 
     def _save_individual_results(self, individual_results, work_dir):
         """Save individual emotion results to a JSON file."""
-        output_json = os.path.join(work_dir, "individual_emotion_results.json")
+        output_json = os.path.join(work_dir, "semantic_emotion_analysis_results.json")
         with open(output_json, "w", encoding="utf-8") as f:
             json.dump(individual_results, f, ensure_ascii=False, indent=4)
         self.logger.info(f"Individual emotion results saved to: {output_json}")
 
     def _save_results(self, highest_results, work_dir):
         """Save the highest emotion groups to a JSON file."""
-        output_json = os.path.join(work_dir, "emotion_highest.json")
+        output_json = os.path.join(work_dir, "weighted_score_rank.json")
         with open(output_json, "w", encoding="utf-8") as f:
             json.dump(highest_results, f, ensure_ascii=False, indent=4)
         self.logger.info(f"Emotion analysis results saved to: {output_json}")
@@ -160,5 +160,5 @@ class EmotionAnalyzer:
 
     def process_speech_emotions(self, work_dir):
         """Perform speech emotion analysis and save SRT with emotion scores."""
-        speech_analyzer = SpeechEmotionAnalyzer(work_dir=work_dir)
+        speech_analyzer = SpeechEmotionAnalyzer(work_dir=work_dir, model_name=self.config["speech_emotion_model"])
         speech_analyzer.process_and_save()

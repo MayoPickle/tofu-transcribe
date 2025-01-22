@@ -1,14 +1,14 @@
 import os
-from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForSequenceClassification
 import torch
-from pydub import AudioSegment
 import srt
-from datetime import timedelta
 import json
+from pydub import AudioSegment
+from tqdm import tqdm
+from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForSequenceClassification
 
 
 class SpeechEmotionAnalyzer:
-    def __init__(self, work_dir, model_name="superb/wav2vec2-base-superb-er"):
+    def __init__(self, work_dir, model_name):
         """
         Initialize the audio and SRT files, as well as the emotion analysis model.
         Automatically detects files with .wav and .srt extensions in the given directory.
@@ -21,8 +21,8 @@ class SpeechEmotionAnalyzer:
         # Automatically find .wav and .srt files in the directory
         self.audio_path = self._find_file(extension=".wav")
         self.srt_path = self._find_file(extension=".srt")
-        self.output_srt_path = os.path.join(work_dir, "output_with_emotion.srt")
-        self.output_json_path = os.path.join(work_dir, "emotion_analysis_results.json")
+        self.output_srt_path = os.path.join(work_dir, "script_with_speech_emotion_analysis_results.srt")
+        self.output_json_path = os.path.join(work_dir, "speech_emotion_analysis_results.json")
 
         # Load audio and SRT files
         self.audio = AudioSegment.from_file(self.audio_path)
@@ -92,7 +92,8 @@ class SpeechEmotionAnalyzer:
         new_subtitles = []
         results = []  # To store JSON data
 
-        for subtitle in self.subtitles:
+        # Process bar
+        for subtitle in tqdm(self.subtitles, desc="Analyzing subtitles", total=len(self.subtitles)):
             start_time = self.timestamp_to_milliseconds(subtitle.start)
             end_time = self.timestamp_to_milliseconds(subtitle.end)
             audio_segment = self.audio[start_time:end_time]
