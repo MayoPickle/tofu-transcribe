@@ -57,8 +57,6 @@ class MainApp:
                 emotion_analyzer.analyze_emotions(srt_file, work_dir)
                 logger.info(f"Processing completed. Results saved in: {work_dir}")
 
-                evaluation_handler = EvaluationHandler(work_dir=work_dir, send_key="SCT268246TdTNi5bqgc2SpaZSDCoYQmKN1", event_data={})
-                evaluation_handler.evaluate_and_notify()
             else:
                 logger.error(f"No SRT file found in {work_dir}. Emotion analysis skipped.")
         else:

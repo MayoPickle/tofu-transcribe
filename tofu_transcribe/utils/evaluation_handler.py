@@ -8,7 +8,7 @@ class EvaluationHandler:
     and sends a notification if the score exceeds a threshold.
     """
 
-    def __init__(self, work_dir, send_key, event_data, score_threshold=0.78):
+    def __init__(self, work_dir, send_key, event_data, score_threshold=0.88):
         """
         Initialize the EvaluationHandler.
 
