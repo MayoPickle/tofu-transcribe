@@ -57,7 +57,7 @@ class EvaluationHandler:
             end_time = time_range.get("end", "Unknown")
 
             if weighted_score > self.score_threshold:
-                title = f"High Weighted Score Alert for Group {group_index}"
+                title = f"High Score Alert: {self.event_data.get("Name", "Unknown")}"
                 content = (
                     f"### High Score Alert\n\n"
                     f"**Group Index:** {group_index}\n"
