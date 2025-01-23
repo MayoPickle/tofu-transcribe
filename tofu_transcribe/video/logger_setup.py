@@ -5,4 +5,4 @@ class LoggerSetup:
     @staticmethod
     def setup_logger():
         logging.basicConfig(level=logging.INFO)
-        return logging.getLogger("video2script_service")
+        return logging.getLogger("tofu_transcribe_service")

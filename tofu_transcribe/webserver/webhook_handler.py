@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import os
 from concurrent.futures import ThreadPoolExecutor
+from utils.evaluation_handler import EvaluationHandler
 from threading import Lock
 from waitress import serve
 
@@ -21,7 +22,7 @@ class WebhookHandler:
         self.config = config
         self.logger = logger
         self.app = Flask(__name__)
-        self.executor = ThreadPoolExecutor(max_workers=5)
+        self.executor = ThreadPoolExecutor(max_workers=1)
         self.active_tasks = set()
         self.task_lock = Lock()
         self._setup_routes()
@@ -31,10 +32,10 @@ class WebhookHandler:
         self.app.add_url_rule(
             "/v1/video2script",
             methods=["POST"],
-            view_func=self._video2script_handler,
+            view_func=self._tofu_transcribe_handler,
         )
 
-    def _process_task(self, full_path):
+    def _process_task(self, full_path, event_data):
         """Process a video file in the background."""
         try:
             work_dir = self.video_processor.prepare_work_dir(full_path)
@@ -49,13 +50,17 @@ class WebhookHandler:
                 self.logger.info(f"Processing completed. Results saved in: {work_dir}")
             else:
                 self.logger.error(f"No SRT file found in {work_dir}. Skipping emotion analysis.")
+
+            if self.config["server_chan_key"]:
+                evaluation_handler = EvaluationHandler(work_dir=work_dir, send_key=self.config["server_chan_key"], event_data)
+                evaluation_handler.evaluate_and_notify()
         except Exception as e:
             self.logger.error(f"Error processing video file {full_path}: {e}")
         finally:
             with self.task_lock:
                 self.active_tasks.remove(full_path)
 
-    def _video2script_handler(self):
+    def _tofu_transcribe_handler(self):
         """Handle incoming webhook requests."""
         data = request.get_json()
         if not data:
@@ -85,7 +90,7 @@ class WebhookHandler:
             self.active_tasks.add(full_path)
 
         # Submit background task
-        self.executor.submit(self._process_task, full_path)
+        self.executor.submit(self._process_task, full_path, event_data)
         return jsonify({"message": "Task started", "file": relative_path}), 200
 
     def run(self):
