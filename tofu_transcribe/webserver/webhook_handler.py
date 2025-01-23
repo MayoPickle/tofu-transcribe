@@ -52,7 +52,7 @@ class WebhookHandler:
                 self.logger.error(f"No SRT file found in {work_dir}. Skipping emotion analysis.")
 
             if self.config["server_chan_key"]:
-                evaluation_handler = EvaluationHandler(work_dir=work_dir, send_key=self.config["server_chan_key"], event_data)
+                evaluation_handler = EvaluationHandler(work_dir=work_dir, send_key=self.config["server_chan_key"], event_data=event_data)
                 evaluation_handler.evaluate_and_notify()
         except Exception as e:
             self.logger.error(f"Error processing video file {full_path}: {e}")

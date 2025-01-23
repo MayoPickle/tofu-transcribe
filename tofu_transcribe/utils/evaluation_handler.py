@@ -1,6 +1,6 @@
 import os
 import json
-from serverchan_push_service import ServerChanPush
+from webserver.serverchan_service import ServerChanPush
 
 class EvaluationHandler:
     """
@@ -8,7 +8,7 @@ class EvaluationHandler:
     and sends a notification if the score exceeds a threshold.
     """
 
-    def __init__(self, work_dir, send_key, event_data, score_threshold=0.87):
+    def __init__(self, work_dir, send_key, event_data, score_threshold=0.78):
         """
         Initialize the EvaluationHandler.
 
@@ -65,3 +65,4 @@ class EvaluationHandler:
                 )
                 response = self.server_push.send(title, content)
                 print(f"Notification sent for Group {group_index}:", response)
+                break
