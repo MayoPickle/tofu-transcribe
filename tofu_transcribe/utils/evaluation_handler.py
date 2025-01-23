@@ -51,17 +51,22 @@ class EvaluationHandler:
         for entry in data:
             group_index = entry.get("group_index", "Unknown")
             weighted_score = entry.get("weighted_score", 0)
-            content = entry.get("combined_text", "Not Available")
+            combined_text = entry.get("combined_text", "Not Available")
+            time_range = entry.get("time_range", {})
+            start_time = time_range.get("start", "Unknown")
+            end_time = time_range.get("end", "Unknown")
 
             if weighted_score > self.score_threshold:
                 title = f"High Weighted Score Alert for Group {group_index}"
                 content = (
-                    f"The weighted score for Group {group_index} is {weighted_score:.2f}, exceeding the threshold of {self.score_threshold:.2f}.\n"
-                    f"Room ID: {self.event_data.get("RoomId", "Unknown")}\n"
-                    f"Name: {self.event_data.get("Name", "Unknown")}\n"
-                    f"Title: {self.event_data.get("Title", "Unknown")}\n"
-                    f"Content: {content}\n"
-                    f"Time Range: {entry.get("time_range", "Not Available")}"
+                    f"### High Score Alert\n\n"
+                    f"**Group Index:** {group_index}\n"
+                    f"**Weighted Score:** {weighted_score:.2f} (Threshold: {self.score_threshold:.2f})\n"
+                    f"**Time Range:** {start_time} - {end_time}\n"
+                    f"**Room ID:** {self.event_data.get("RoomId", "Unknown")}\n"
+                    f"**Name:** {self.event_data.get("Name", "Unknown")}\n"
+                    f"**Title:** {self.event_data.get("Title", "Unknown")}\n\n"
+                    f"**Content:**\n{combined_text}\n"
                 )
                 response = self.server_push.send(title, content)
                 print(f"Notification sent for Group {group_index}:", response)

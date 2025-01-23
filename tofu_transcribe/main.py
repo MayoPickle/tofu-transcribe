@@ -5,7 +5,6 @@ from video.logger_setup import LoggerSetup
 from video.video_processor import VideoProcessor
 from video.emotion_analyzer import EmotionAnalyzer
 from webserver.webhook_handler import WebhookHandler
-from utils.evaluation_handler import EvaluationHandler
 
 
 class MainApp:
