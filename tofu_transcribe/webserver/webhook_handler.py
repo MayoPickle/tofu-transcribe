@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import os
 from concurrent.futures import ThreadPoolExecutor
 from utils.evaluation_handler import EvaluationHandler
+from nlp.nlp_emotion_analyzer import NLPAnalyzer
 from threading import Lock
 from waitress import serve
 
@@ -35,30 +36,61 @@ class WebhookHandler:
             view_func=self._tofu_transcribe_handler,
         )
 
-    def _process_task(self, full_path, event_data):
-        """Process a video file in the background."""
+    def _process_video(self, full_path, event_data):
+        """Process the video and perform all required operations."""
         try:
             work_dir = self.video_processor.prepare_work_dir(full_path)
-            wav_file = os.path.join(work_dir, "tofu_transcribe.wav")
-            self.video_processor.convert_to_wav(full_path, wav_file)
-            self.video_processor.run_whisper(wav_file, work_dir)
+            self._convert_video_to_audio(full_path, work_dir)
+            self._process_transcription(work_dir)
+            clickbait_title = self._analyze_emotions_and_generate_title(work_dir)
 
-            srt_file = self.video_processor.find_srt_file(work_dir)
-            if srt_file:
-                self.emotion_analyzer.process_speech_emotions(work_dir)
-                self.emotion_analyzer.analyze_emotions(srt_file, work_dir)
-                self.logger.info(f"Processing completed. Results saved in: {work_dir}")
-            else:
-                self.logger.error(f"No SRT file found in {work_dir}. Skipping emotion analysis.")
+            print(clickbait_title)
 
             if self.config["server_chan_key"]:
-                evaluation_handler = EvaluationHandler(work_dir=work_dir, send_key=self.config["server_chan_key"], event_data=event_data)
-                evaluation_handler.evaluate_and_notify()
+                self._evaluate_and_notify(work_dir, event_data, clickbait_title)
         except Exception as e:
             self.logger.error(f"Error processing video file {full_path}: {e}")
         finally:
-            with self.task_lock:
-                self.active_tasks.remove(full_path)
+            self._remove_active_task(full_path)
+
+    def _convert_video_to_audio(self, full_path, work_dir):
+        """Convert video to WAV format."""
+        wav_file = os.path.join(work_dir, "tofu_transcribe.wav")
+        self.video_processor.convert_to_wav(full_path, wav_file)
+
+    def _process_transcription(self, work_dir):
+        """Run transcription and check for SRT file."""
+        self.video_processor.run_whisper(os.path.join(work_dir, "tofu_transcribe.wav"), work_dir)
+
+    def _analyze_emotions_and_generate_title(self, work_dir):
+        """Analyze emotions and generate a clickbait title if applicable."""
+        srt_file = self.video_processor.find_srt_file(work_dir)
+        if not srt_file:
+            self.logger.error(f"No SRT file found in {work_dir}. Skipping emotion analysis.")
+            return None
+
+        self.emotion_analyzer.process_speech_emotions(work_dir)
+        self.emotion_analyzer.analyze_emotions(srt_file, work_dir)
+
+        if self.config["open_ai_key"]:
+            nlp_handler = NLPAnalyzer(api_key=self.config["open_ai_key"], model=self.config["nlp_model"])
+            return nlp_handler.generate_clickbait_title(work_dir=work_dir)
+        return None
+
+    def _evaluate_and_notify(self, work_dir, event_data, clickbait_title=None):
+        """Handle evaluation and send notifications."""
+        evaluation_handler = EvaluationHandler(
+            work_dir=work_dir,
+            send_key=self.config["server_chan_key"],
+            event_data=event_data,
+            clickbait_title=clickbait_title,
+        )
+        evaluation_handler.evaluate_and_notify()
+
+    def _remove_active_task(self, full_path):
+        """Safely remove a task from the active task set."""
+        with self.task_lock:
+            self.active_tasks.discard(full_path)
 
     def _tofu_transcribe_handler(self):
         """Handle incoming webhook requests."""
@@ -66,7 +98,7 @@ class WebhookHandler:
         if not data:
             return jsonify({"error": "Invalid JSON"}), 400
 
-        # Extract and validate request data
+        # Validate and extract data
         try:
             event_type = data["EventType"]
             event_data = data["EventData"]
@@ -82,15 +114,15 @@ class WebhookHandler:
             self.logger.error(f"File not found: {full_path}")
             return jsonify({"error": f"File not found: {full_path}"}), 404
 
-        # Avoid duplicate tasks for the same file
+        # Avoid duplicate tasks
         with self.task_lock:
             if full_path in self.active_tasks:
                 self.logger.warning(f"Task for {full_path} is already running.")
                 return jsonify({"message": "Task already running", "file": relative_path}), 200
             self.active_tasks.add(full_path)
 
-        # Submit background task
-        self.executor.submit(self._process_task, full_path, event_data)
+        # Submit task for processing
+        self.executor.submit(self._process_video, full_path, event_data)
         return jsonify({"message": "Task started", "file": relative_path}), 200
 
     def run(self):

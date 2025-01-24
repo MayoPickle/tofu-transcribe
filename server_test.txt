@@ -1,0 +1,24 @@
+curl -X POST http://localhost:8080/v1/video2script \
+-H "Content-Type: application/json" \
+-d '{
+  "EventType": "FileClosed",
+  "EventTimestamp": "2021-05-14T17:52:54.9461101+08:00",
+  "EventId": "98f85267-e08c-4f15-ad9a-1fc463d42b0b",
+  "EventData": {
+    "RelativePath": "half-year-celebration-10.flv",
+    "FileSize": 816412,
+    "Duration": 4.992,
+    "FileOpenTime": "2021-05-14T17:52:50.5246401+08:00",
+    "FileCloseTime": "2021-05-14T17:52:54.9461101+08:00",
+    "SessionId": "7c7f3672-70ce-405a-aa12-886702ced6e5",
+    "RoomId": 23058,
+    "ShortId": 3,
+    "Name": "3号直播间",
+    "Title": "哔哩哔哩音悦台",
+    "AreaNameParent": "生活",
+    "AreaNameChild": "影音馆",
+    "Recording": true,
+    "Streaming": true,
+    "DanmakuConnected": true
+  }
+}'
