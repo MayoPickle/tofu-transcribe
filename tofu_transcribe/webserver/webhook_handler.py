@@ -1,5 +1,7 @@
-from flask import Flask, request, jsonify
 import os
+import json
+
+from flask import Flask, request, jsonify
 from concurrent.futures import ThreadPoolExecutor
 from utils.evaluation_handler import EvaluationHandler
 from nlp.nlp_emotion_analyzer import NLPAnalyzer
@@ -42,7 +44,7 @@ class WebhookHandler:
             work_dir = self.video_processor.prepare_work_dir(full_path)
             self._convert_video_to_audio(full_path, work_dir)
             self._process_transcription(work_dir)
-            clickbait_title = self._analyze_emotions_and_generate_title(work_dir)
+            clickbait_title = self._analyze_emotions_and_generate_title(work_dir, full_path)
 
             print(clickbait_title)
 
@@ -62,7 +64,7 @@ class WebhookHandler:
         """Run transcription and check for SRT file."""
         self.video_processor.run_whisper(os.path.join(work_dir, "tofu_transcribe.wav"), work_dir)
 
-    def _analyze_emotions_and_generate_title(self, work_dir):
+    def _analyze_emotions_and_generate_title(self, work_dir, input_file):
         """Analyze emotions and generate a clickbait title if applicable."""
         srt_file = self.video_processor.find_srt_file(work_dir)
         if not srt_file:
@@ -72,10 +74,14 @@ class WebhookHandler:
         self.emotion_analyzer.process_speech_emotions(work_dir)
         self.emotion_analyzer.analyze_emotions(srt_file, work_dir)
 
+        clickbait_title = None
         if self.config["open_ai_key"]:
             nlp_handler = NLPAnalyzer(api_key=self.config["open_ai_key"], model=self.config["nlp_model"])
-            return nlp_handler.generate_clickbait_title(work_dir=work_dir)
-        return None
+            clickbait_title = nlp_handler.generate_clickbait_title(work_dir=work_dir)
+        
+        self._process_weighted_scores(work_dir, input_file, clickbait_title)  # New step
+
+        return clickbait_title
 
     def _evaluate_and_notify(self, work_dir, event_data, clickbait_title=None):
         """Handle evaluation and send notifications."""
@@ -84,6 +90,7 @@ class WebhookHandler:
             send_key=self.config["server_chan_key"],
             event_data=event_data,
             clickbait_title=clickbait_title,
+            score_threshold=self.config["score_threshold"],
         )
         evaluation_handler.evaluate_and_notify()
 
@@ -91,6 +98,24 @@ class WebhookHandler:
         """Safely remove a task from the active task set."""
         with self.task_lock:
             self.active_tasks.discard(full_path)
+    
+    def _process_weighted_scores(self, work_dir, input_file, clickbait_title):
+        """Process weighted_score_rank.json and cut high-score clips."""
+        json_path = os.path.join(work_dir, "weighted_score_rank.json")
+        if not os.path.exists(json_path):
+            self.logger.warning(f"No weighted_score_rank.json found in {work_dir}.")
+            return
+
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        for entry in data:
+            if entry["weighted_score"] > self.config["score_threshold"]:
+                start_time = entry["time_range"]["start"]
+                end_time = entry["time_range"]["end"]
+                output_file = os.path.join(work_dir, f"highlight_{round(entry["weighted_score"], 3)}_{clickbait_title}.flv")
+                self.video_processor.cut_video(input_file, start_time, end_time, output_file)
+
 
     def _tofu_transcribe_handler(self):
         """Handle incoming webhook requests."""

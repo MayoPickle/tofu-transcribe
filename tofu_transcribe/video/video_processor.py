@@ -4,7 +4,7 @@ import subprocess
 
 
 class VideoProcessor:
-    """Handles video processing tasks like audio extraction and transcription."""
+    """Handles video processing tasks like audio extraction, transcription, and video cutting."""
 
     def __init__(self, config, logger):
         self.config = config
@@ -18,6 +18,24 @@ class VideoProcessor:
         except subprocess.CalledProcessError as e:
             self.logger.error(f"{error_message}: {e}")
             raise
+
+    def cut_video(self, input_file, start_time, end_time, output_file):
+        """Cut a section from the input video (FLV format) and save it to the output file."""
+        if not os.path.exists(input_file):
+            self.logger.error(f"Input file does not exist: {input_file}")
+            raise FileNotFoundError(f"Input file does not exist: {input_file}")
+
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+        command = [
+            "ffmpeg", "-i", input_file,
+            "-ss", str(start_time),  # Start time in seconds
+            "-to", str(end_time),  # End time in seconds
+            "-c", "copy",  # Copy streams without re-encoding
+            output_file
+        ]
+        self._run_command(command, "Error during video cutting")
+        self.logger.info(f"Video cut and saved to: {output_file}")
 
     def convert_to_wav(self, input_file, output_wav):
         """Convert a video file to WAV format."""

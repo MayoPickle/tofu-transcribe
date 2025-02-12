@@ -3,17 +3,16 @@ import json
 import openai
 
 class NLPAnalyzer:
-    def __init__(self, api_key, model="gpt-4o-mini"):
+    def __init__(self, api_key, model="gpt-4"):
         """
         Initialize the NLP Analyzer
         :param api_key: OpenAI API key
-        :param model: The GPT model to use (default: gpt-4o-mini)
+        :param model: The GPT model to use (default: gpt-4)
         """
         self.file_name = "weighted_score_rank.json"
         openai.api_key = api_key
         self.model = model
 
-    
     def read_score_file(self, file_path):
         """
         Read and parse the weighted_score_rank.json file.
@@ -44,21 +43,25 @@ class NLPAnalyzer:
 
             # Define the prompt for OpenAI API
             prompt = (
-                "Here is the content of a subtitle file. Please summarize it into an engaging video title "
-                f"that is no more than {max_length} characters:\n\n"
-                f"{data[0]['combined_text']}\n\nTitle:"
+                f"{data[0]['combined_text']}\n\n"
+                f"Generate a concise and engaging title for this content. "
+                f"The title must be no longer than {max_length} characters. "
+                f"Only provide the title without any additional explanation or formatting."
             )
 
             # Call the OpenAI GPT model to generate a title
-            response = openai.Completion.create(
+            response = openai.chat.completions.create(
                 model=self.model,
-                prompt=prompt,
+                messages=[
+                    {"role": "system", "content": "You are an assistant that strictly follows instructions. Do not add any extra content beyond what is asked."},
+                    {"role": "user", "content": prompt}
+                ],
                 max_tokens=50,
                 temperature=0.7
             )
 
             # Extract and return the title
-            title = response.choices[0].text.strip()
+            title = response.choices[0].message.content.strip()
             return title if len(title) <= max_length else title[:max_length]
 
         except Exception as e:
