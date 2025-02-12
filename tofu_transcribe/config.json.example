@@ -1,0 +1,18 @@
+{
+    "model": "base",
+    "device": "cpu",
+    "language": "Chinese",
+    "flask_host": "0.0.0.0",
+    "flask_port": 8080,
+    "live_root_dir": "./",
+    "server_chan_key": "",
+    "open_ai_key": "",
+    "semantic_emotion_model": "uer/roberta-base-finetuned-jd-binary-chinese",
+    "speech_emotion_model": "superb/wav2vec2-base-superb-er",
+    "nlp_model": "gpt-4o-mini",
+    "score_threshold": 0.86,
+    "ffmpeg_options": {
+        "sample_rate": 16000,
+        "channels": 1
+    }
+}
