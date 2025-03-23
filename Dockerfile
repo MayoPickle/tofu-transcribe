@@ -46,7 +46,7 @@ RUN cp tofu_transcribe/config.json.example tofu_transcribe/config.json && \
     sed -i 's/"device": "cpu"/"device": "cuda"/g' tofu_transcribe/config.json
 
 # Set the entry point
-ENTRYPOINT ["python3", "-m", "tofu_transcribe.main"]
+ENTRYPOINT ["python3", "-m", "tofu_transcribe.main", "--config", "tofu_transcribe/config.json"]
 
 # Default command (can be overridden)
 CMD ["--webserver"] 
