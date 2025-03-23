@@ -64,26 +64,44 @@ class SpeechEmotionAnalyzer:
         :param audio_segment: pydub.AudioSegment object
         :return: (Top emotion label, all emotion scores)
         """
-        samples = audio_segment.get_array_of_samples()
-        inputs = self.feature_extractor(
-            list(samples),
-            sampling_rate=self.audio.frame_rate,
-            return_tensors="pt",
-            padding=True
-        )
-        inputs["input_values"] = inputs["input_values"].to(torch.float32)
+        # Check if audio segment is too short
+        if len(audio_segment) < 200:  # Less than 200ms is likely too short
+            # Return a default or "unknown" emotion for segments that are too short
+            return "neutral", [("neutral", 1.0), ("happy", 0.0), ("sad", 0.0), ("angry", 0.0), ("fearful", 0.0), ("disgust", 0.0), ("surprised", 0.0)]
+        
+        try:
+            samples = audio_segment.get_array_of_samples()
+            # Ensure the sample is long enough for the CNN kernel
+            if len(samples) < 5:  # A minimum threshold to avoid kernel size error
+                return "neutral", [("neutral", 1.0), ("happy", 0.0), ("sad", 0.0), ("angry", 0.0), ("fearful", 0.0), ("disgust", 0.0), ("surprised", 0.0)]
+            
+            inputs = self.feature_extractor(
+                list(samples),
+                sampling_rate=self.audio.frame_rate,
+                return_tensors="pt",
+                padding=True
+            )
+            inputs["input_values"] = inputs["input_values"].to(torch.float32)
 
-        with torch.no_grad():
-            logits = self.model(**inputs).logits
-            scores = torch.softmax(logits, dim=-1)
+            with torch.no_grad():
+                logits = self.model(**inputs).logits
+                scores = torch.softmax(logits, dim=-1)
 
-        emotion_scores = sorted(
-            [(self.id2label[i], score.item()) for i, score in enumerate(scores[0])],
-            key=lambda x: x[1],
-            reverse=True
-        )
-        top_emotion_label = emotion_scores[0][0]
-        return top_emotion_label, emotion_scores
+            emotion_scores = sorted(
+                [(self.id2label[i], score.item()) for i, score in enumerate(scores[0])],
+                key=lambda x: x[1],
+                reverse=True
+            )
+            top_emotion_label = emotion_scores[0][0]
+            return top_emotion_label, emotion_scores
+            
+        except RuntimeError as e:
+            # Handle the specific error about kernel size
+            if "Kernel size can't be greater than actual input size" in str(e):
+                return "neutral", [("neutral", 1.0), ("happy", 0.0), ("sad", 0.0), ("angry", 0.0), ("fearful", 0.0), ("disgust", 0.0), ("surprised", 0.0)]
+            else:
+                # Re-raise other runtime errors
+                raise
 
     def process_and_save(self):
         """
