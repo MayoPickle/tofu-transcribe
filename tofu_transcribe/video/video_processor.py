@@ -1,7 +1,10 @@
 import os
 import glob
 import subprocess
+import warnings
 
+# Suppress the torch.load FutureWarning
+warnings.filterwarnings("ignore", category=FutureWarning, message="You are using `torch.load` with `weights_only=False`")
 
 class VideoProcessor:
     """Handles video processing tasks like audio extraction, transcription, and video cutting."""
