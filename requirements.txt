@@ -1,10 +1,18 @@
-flask
-argparse
-logging
-openai-whisper
-waitress
-transformers
-pydub
-srt
-pysrt
-openai
+torch==2.5.1
+tqdm==4.66.5
+transformers==4.48.0
+pydub==0.25.1
+srt==3.5.3
+pysrt==1.1.2
+matplotlib==3.9.2
+flask==3.0.3
+waitress==3.0.2
+openai==1.60.1
+numpy==1.26.4
+openai-whisper==20240930
+
+# Note: ffmpeg is required but needs to be installed via system package manager
+# For Ubuntu/Debian: sudo apt-get install ffmpeg
+# For CentOS/RHEL: sudo yum install ffmpeg
+# For macOS: brew install ffmpeg
+
