@@ -33,6 +33,12 @@ class SpeechEmotionAnalyzer:
         # Load the model and feature extractor
         self.feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(model_name)
         self.model = Wav2Vec2ForSequenceClassification.from_pretrained(model_name)
+        
+        # Handle gradient_checkpointing if it exists in the config
+        if hasattr(self.model.config, "gradient_checkpointing") and self.model.config.gradient_checkpointing:
+            # Use the new recommended method instead
+            self.model.gradient_checkpointing_enable()
+            
         self.id2label = self.model.config.id2label
 
     def _find_file(self, extension):
