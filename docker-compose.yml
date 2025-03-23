@@ -2,14 +2,16 @@ version: '3.8'
 
 services:
   tofu-transcribe:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/mayopickle/tofu-transcribe:main
     container_name: tofu-transcribe
     ports:
       - "8080:8080"
     volumes:
       - ./data:/app/data
+      - ./tofu_transcribe/config.json:/app/tofu_transcribe/config.json
+      - /mnt/fnOS/录播姬:/mnt/fnOS/录播姬
+    entrypoint: ["python3"]
+    command: tofu_transcribe/main.py --webserver --config tofu_transcribe/config.json
     restart: unless-stopped
     deploy:
       resources:
