@@ -23,10 +23,20 @@ WORKDIR /app
 # Copy requirements file
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip3 install --no-cache-dir -U pip && \
-    pip3 install --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118 && \
-    pip3 install --no-cache-dir -r requirements.txt
+# Install Python dependencies step by step
+RUN pip3 install --no-cache-dir -U pip setuptools wheel
+
+# Install PyTorch with CUDA support
+RUN pip3 install --no-cache-dir torch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu116
+
+# Install individual dependencies from requirements.txt to isolate issues
+RUN pip3 install --no-cache-dir flask argparse
+RUN pip3 install --no-cache-dir waitress
+RUN pip3 install --no-cache-dir transformers
+RUN pip3 install --no-cache-dir pydub
+RUN pip3 install --no-cache-dir srt pysrt
+RUN pip3 install --no-cache-dir openai
+RUN pip3 install --no-cache-dir --verbose openai-whisper
 
 # Copy the application code
 COPY . .
