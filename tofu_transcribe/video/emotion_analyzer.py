@@ -94,14 +94,14 @@ class EmotionAnalyzer:
         # 1) Group based on individual scores
         self.script_analyzer.group_by_individual_scores(
             individual_results,
-            group_size=64,
+            group_size=8,
             step=4
         )
 
         # 2) Perform sliding window grouping and averaging
         self.script_analyzer.group_and_average(
             subtitles=subtitles,
-            group_size=64,
+            group_size=8,
             step=4,
             max_length=512,
             output_json_path=os.path.join(work_dir, "grouped_semantic_emotion_analysis_results.json")
